@@ -1,0 +1,8 @@
+{
+  "methods": [
+    "LSB",
+    "DCT",
+    "GAN_Enc",
+    "Adaptive_JND"
+  ]
+}

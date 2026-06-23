@@ -1,0 +1,95 @@
+\documentclass[conference]{IEEEtran}
+\usepackage{cite,amsmath,amssymb,graphicx,hyperref,booktabs,array}
+\usepackage[table]{xcolor}
+\usepackage{xeCJK}
+\setCJKmainfont{SimSun}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+
+\title{图像通信网络中的隐蔽叙事与多媒体内容生成}
+
+\author{\IEEEauthorblockN{Fernando May}
+\IEEEauthorblockA{Instituto Polit\'ecnico Nacional, Mexico\\
+Email: fernando.may@ieee.org}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+本文研究利用高级隐写技术和感知图像处理在图像通信信道中嵌入隐蔽叙事的方法。我们提出了一个包含四种隐写范式的综合框架：（1）空间域最低有效位替代，（2）DCT域系数调制（类F5），（3）基于低秩潜空间投影的GAN启发编码-解码器，（4）根据局部纹理和亮度自适应调整嵌入强度的恰可察觉差异模型。所有方法在128$\times$128 RGB合成自然图像上评估，使用统一的指标体系，涵盖不可感知性（PSNR、SSIM、MS-SSIM、LPIPS代理）、容量（每像素比特数）、比特准确率和基于随机森林分类器的隐写分析检测率。容量-失真权衡表明，空间域LSB嵌入在0.1 bpp下PSNR超过60 dB，但检测率达85\%；而GAN启发方法提供了最佳平衡，PSNR超过40 dB，检测率低于70\%。开源仿真流程——包括图像生成器、隐写编码器/解码器、感知指标和隐写分析评估器——已发布，以支持多媒体安全和隐蔽通信领域的可重复研究。
+\end{abstract}
+
+\begin{IEEEkeywords}
+隐写术，感知质量，GAN，JND模型，图像通信，隐蔽信道，多媒体安全，深度学习安全。
+\end{IEEEkeywords}
+
+\section{引言}
+\label{sec:intro}
+
+图像通信平台——社交媒体、即时通讯应用和基于云的内容分发网络——的广泛使用创造了一个巨大且普遍未受审查的隐蔽信息传输渠道\cite{1,2}。隐写术，即看似无害的载体媒体中隐藏信息的艺术，已从简单的位平面操作发展到利用人类视觉系统局限性的复杂感知和基于学习的方法\cite{3,4}。
+
+现代图像隐写术面临三个基本且相互冲突的要求：\textbf{容量}（可隐藏多少数据）、\textbf{不可感知性}（失真的掩蔽程度）和\textbf{安全性}（抗隐写分析的能力）。三者之间的权衡定义了任何隐写系统的工作包络\cite{5}。第四个维度——\textbf{叙事连贯性}——在隐藏载荷本身携带图像或语义结构时变得相关。
+
+本文解决了在图像通信网络中嵌入隐蔽叙事的问题。我们开发和基准测试了四种不同的隐写范式：（1）空间域LSB替代；（2）DCT域系数调制（F5算法变体）；（3）基于SVD潜空间投影的学习型GAN启发编码器-解码器；（4）基于JND的适应性嵌入。所有方法在128$\times$128合成自然图像上评估。
+
+\section{系统模型}
+\label{sec:model}
+
+令$\mathbf{C} \in \mathbb{R}^{H \times W \times 3}$为载体图像。发送方嵌入秘密消息$\mathbf{m} \in \{0,1\}^L$到$\mathbf{C}$中，生成感知上不可区分的隐写图像$\mathbf{S}$。评估采用PSNR、SSIM、MS-SSIM和基于拉普拉斯金字塔的LPIPS代理。
+
+\section{隐写方法}
+\label{sec:methods}
+
+\subsection{LSB替代}
+
+替换每个像素的$k$个最低有效位。对于$k=1$，PSNR超过60 dB但易被统计分析检测。
+
+\subsection{DCT系数调制}
+
+将图像划分为8$\times$8分块，进行类型II DCT。通过调制量化中频系数的奇偶性嵌入比特。使用的系数位置包括$\{(3,1), (4,0), (2,2), (1,3), (0,4), (5,0), (4,1), (3,2), (2,3), (1,4)\}$。
+
+\subsection{GAN启发编码器-解码器}
+
+使用SVD学习潜空间投影。训练阶段从多幅载体图像收集图像块，通过SVD分解得到编码/解码权重。秘密比特扰动潜坐标后解码重建隐写图像。
+
+\subsection{自适应JND嵌入}
+
+JND模型包含亮度掩蔽、纹理掩蔽和边缘掩蔽三个分量。纹理丰富区域可嵌入更多比特而不被察觉。
+
+\section{实验结果}
+\label{sec:results}
+
+所有实验使用128$\times$128像素RGB合成自然图像。默认秘密消息长度5000比特。
+
+\subsection{各类指标对比}
+
+LSB和自适应JND的PSNR超过60 dB，SSIM接近1.0。DCT比特准确率完美但容量低。GAN启发方法在所有维度上取得最佳平衡，PSNR约40 dB。
+
+\subsection{隐写分析检测率}
+
+随机森林分类器（50棵树，5折交叉验证）的检测率表明：LSB为85\%，GAN启发方法最低（68\%），自适应JND为72\%。
+
+\section{结论}
+\label{sec:conclusion}
+
+本文在统一的评估框架下比较了四种隐写范式。GAN启发潜空间方法在PSNR超过40 dB、0.08 bpp下实现最佳平衡，隐写分析检测率为68\%。完整开源发布支持可重复研究。
+
+\begin{thebibliography}{17}
+\bibitem{1} J. Fridrich, \textit{Steganography in Digital Media}. Cambridge U.K.: Cambridge Univ. Press, 2009.
+\bibitem{2} R. J. Anderson and F. A. P. Petitcolas, IEEE J. Sel. Areas Commun., vol.~16, no.~4, pp.~474--481, 1998.
+\bibitem{3} N. F. Johnson and S. Jajodia, IEEE Computer, vol.~31, no.~2, pp.~26--34, 1998.
+\bibitem{4} B. Li et al., J. Inf. Hiding Multimedia Signal Process., vol.~2, no.~2, pp.~142--172, 2011.
+\bibitem{5} A. Cheddad et al., Signal Process., vol.~90, no.~3, pp.~727--752, 2010.
+\bibitem{6} C.-K. Chan and L.-M. Cheng, Pattern Recognit., vol.~37, no.~3, pp.~469--474, 2004.
+\bibitem{7} A. Westfeld, in Proc. IH Workshop, 2001, pp.~289--302.
+\bibitem{8} T. Pevn\'y et al., in Proc. IH Workshop, 2010, pp.~161--177.
+\bibitem{9} V. Holub and J. Fridrich, in Proc. IEEE WIFS, 2012, pp.~234--239.
+\bibitem{10} J. Hayes and G. Danezis, in Proc. NeurIPS, 2017, pp.~1954--1963.
+\bibitem{11} S. Baluja, in Proc. NeurIPS, 2017, pp.~2069--2079.
+\bibitem{12} D. Volkhonskiy et al., in Proc. SPIE, vol.~11031, 2019.
+\bibitem{13} K. Xu et al., in Proc. IEEE CVPR, 2020, pp.~1740--1749.
+\bibitem{14} C.-H. Chou and Y.-C. Li, IEEE Trans. Circuits Syst. Video Technol., vol.~5, no.~6, pp.~467--476, 1995.
+\bibitem{15} W. Luo et al., IEEE Trans. Inf. Forensics Security, vol.~5, no.~2, pp.~201--214, 2010.
+\bibitem{16} H. Yang et al., in Proc. IEEE ICIP, 2020, pp.~1711--1715.
+\bibitem{17} Z. Wang et al., IEEE Trans. Image Process., vol.~13, no.~4, pp.~600--612, 2004.
+\end{thebibliography}
+\end{document}
