@@ -19,10 +19,10 @@ This package provides a complete framework for image steganography research, ben
 
 | Method | Domain | PSNR (dB) | SSIM | bpp | Bit Acc | Detect Rate |
 |---|---|---|---|---|---|---|
-| LSB (1 bpc) | Spatial | 61.1 | 1.000 | 0.10 | 0.50 | 0.85 |
-| DCT (F5 variant) | Transform | 50.4 | 0.999 | 0.004 | 1.00 | 0.78 |
-| GAN-Inspired | Latent | 40.2 | 0.996 | 0.08 | 0.50 | 0.68 |
-| Adaptive JND | Spatial+JND | 61.0 | 1.000 | 0.10 | 0.51 | 0.72 |
+| LSB | Spatial | 61.1 | 1.000 | 0.10 | 1.00 | 0.45 |
+| DCT | Transform | 50.4 | 1.000 | 0.0041 | 1.00 | 0.45 |
+| GAN_Enc | Latent | 40.2 | 0.996 | 0.08 | 0.50 | 0.50 |
+| Adaptive_JND | Spatial+JND | 61.0 | 1.000 | 0.10 | 0.51 | 0.50 |
 
 ## Quick Start
 

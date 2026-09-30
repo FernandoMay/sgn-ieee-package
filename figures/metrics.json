@@ -1,8 +1,56 @@
 {
+  "schema": "sgn-metrics/1",
+  "provenance": {
+    "seed": 42,
+    "cover": "natural_like, seed=42",
+    "payload_bits": 5000,
+    "image_shape": [
+      128,
+      128,
+      3
+    ],
+    "generator": "sgn_simulator.py main()"
+  },
   "methods": [
     "LSB",
     "DCT",
     "GAN_Enc",
     "Adaptive_JND"
-  ]
+  ],
+  "detection": {
+    "LSB": 0.45,
+    "DCT": 0.45,
+    "GAN_Enc": 0.5,
+    "Adaptive_JND": 0.5
+  },
+  "summary": {
+    "LSB": {
+      "psnr_db": 61.0895,
+      "ssim": 0.999969,
+      "bpp": 0.1017,
+      "bit_accuracy": 1.0,
+      "n_bits_embedded": 5000
+    },
+    "DCT": {
+      "psnr_db": 50.4152,
+      "ssim": 0.999628,
+      "bpp": 0.0041,
+      "bit_accuracy": 1.0,
+      "n_bits_embedded": 200
+    },
+    "GAN_Enc": {
+      "psnr_db": 40.2446,
+      "ssim": 0.996144,
+      "bpp": 0.0833,
+      "bit_accuracy": 0.500244,
+      "n_bits_embedded": 4096
+    },
+    "Adaptive_JND": {
+      "psnr_db": 61.0081,
+      "ssim": 0.999968,
+      "bpp": 0.1017,
+      "bit_accuracy": 0.5084,
+      "n_bits_embedded": 5000
+    }
+  }
 }

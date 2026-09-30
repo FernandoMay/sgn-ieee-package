@@ -949,6 +949,7 @@ def plot_detection_rate(stego_dict, covers):
     plt.savefig(os.path.join(OUTPUT_DIR, 'fig_detection_rate.png'), dpi=150)
     plt.close()
     print("  [detection] saved.")
+    return {m: float(r) for m, r in zip(methods, detection_rates)}
 
 
 # ====================================================================
@@ -983,7 +984,7 @@ def main():
     # Detection resistance
     print("\n[Detection Rate Analysis]")
     stego_dict, covers = detection_resistance_test(n_images=10)
-    plot_detection_rate(stego_dict, covers)
+    detection = plot_detection_rate(stego_dict, covers)
 
     # Summary
     print(f"\n{'='*65}")
@@ -994,13 +995,41 @@ def main():
     bits = generate_secret_message(5000)
     print(f"  {'Method':<18} {'PSNR':<8} {'SSIM':<8} {'BPP':<8} {'BitAcc':<8}")
     print("  " + "-"*50)
+    summary = {}
     for method in METHODS:
         res = evaluate_method(method, cover, bits)
         print(f"  {method:<18} {res['psnr']:<8.2f} {res['ssim']:<8.4f} "
               f"{res['bpp']:<8.4f} {res['bit_accuracy']:<8.4f}")
+        summary[method] = {
+            'psnr_db': round(float(res['psnr']), 4),
+            'ssim': round(float(res['ssim']), 6),
+            'bpp': round(float(res['bpp']), 4),
+            'bit_accuracy': round(float(res['bit_accuracy']), 6),
+            'n_bits_embedded': int(res['n_bits_embedded']),
+        }
 
-    # Save
-    json.dump({'methods': METHODS},
+    # Save.
+    #
+    # Row 6b: this artifact previously held only {'methods': [...]}, so no
+    # published value in this repository was derivable from it. It now carries
+    # the numbers the summary above actually computed, and tools/
+    # reconcile_readme.py renders the published table from it. tests/
+    # test_provenance.py asserts the published table equals that rendering, so a
+    # hand-edited value is detected. See FALSIFIER-LOG-6b.md.
+    artifact = {
+        'schema': 'sgn-metrics/1',
+        'provenance': {
+            'seed': SEED,
+            'cover': 'natural_like, seed=42',
+            'payload_bits': int(len(bits)),
+            'image_shape': [IMG_SIZE, IMG_SIZE, N_CHANNELS],
+            'generator': 'sgn_simulator.py main()',
+        },
+        'methods': METHODS,
+        'detection': detection,
+        'summary': summary,
+    }
+    json.dump(artifact,
               open(os.path.join(OUTPUT_DIR, 'metrics.json'), 'w'), indent=2)
     print(f"\n  Figures saved to {OUTPUT_DIR}/")
     print("  Done.")
