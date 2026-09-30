@@ -170,11 +170,32 @@ class LSBSteganography(SteganographyBase):
         return flat.reshape(cover.shape).astype(np.uint8), n_bits
 
     def decode(self, stego):
-        """Extract LSB bits."""
+        """Extract LSB bits.
+
+        Must be the inverse of `encode`: `encode` writes `bpc` bits per pixel
+        into the low bits of each pixel value, so `decode` reads back `bpc`
+        bits per pixel in the same order.
+
+        The previous implementation masked each pixel and passed the result to
+        `np.unpackbits`, which expands every uint8 into eight bits — seven
+        structural zeros followed by the masked value. That returned
+        `8 * len(flat)` bits where `encode` had written `bpc * len(flat)`, and
+        placed the real bits at the end of each eight-bit group rather than at
+        the position `encode` used. The consequence was that bit accuracy
+        measured against a uniform-random payload sat at chance, and a payload of
+        all zeros scored a perfect 1.0 for the wrong reason. See
+        FALSIFIER-LOG.md for the pre-fix run that established the mechanism.
+        """
         flat = stego.ravel()
         mask = (1 << self.bpc) - 1
-        bits = np.unpackbits(np.array([flat[i] & mask for i in range(len(flat))], dtype=np.uint8))
-        return bits
+        low = (flat & mask).astype(np.uint8)
+        # `encode` writes bit `i` of a pixel into shift position `i % bpc`, so
+        # the read order within a pixel is ascending shift position. The first
+        # attempt here used descending order, which round-tripped correctly at
+        # bpc=1 and failed at bpc=2 and bpc=3; the falsifier caught it.
+        shifts = np.arange(self.bpc)
+        bits = ((low[:, None] >> shifts[None, :]) & 1).astype(np.uint8)
+        return bits.ravel()
 
     def capacity(self):
         return 3 * self.bpc  # bits per pixel
