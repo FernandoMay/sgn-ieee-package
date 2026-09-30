@@ -1,14 +1,28 @@
 {
   "schema": "sgn-metrics/1",
   "provenance": {
+    "source_commit": "6edfd5c6bccc5d44296c588989a0bae8cef768bb",
+    "source_dirty": true,
+    "python_version": "3.14.3",
+    "python_implementation": "CPython",
+    "dependency_versions": {
+      "numpy": "2.5.3",
+      "scipy": "1.18.1",
+      "matplotlib": "3.11.2",
+      "scikit-learn": "1.9.1"
+    },
+    "platform": "Darwin",
+    "architecture": "arm64",
     "seed": 42,
-    "cover": "natural_like, seed=42",
-    "payload_bits": 5000,
-    "image_shape": [
-      128,
-      128,
-      3
-    ],
+    "configuration": {
+      "cover": "natural_like, seed=42",
+      "payload_bits": 5000,
+      "image_shape": [
+        128,
+        128,
+        3
+      ]
+    },
     "generator": "sgn_simulator.py main()"
   },
   "methods": [

@@ -21,7 +21,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
-import os, json, itertools, copy, warnings
+import os, json, itertools, copy, warnings, sys, platform, subprocess, importlib.metadata
 from scipy.signal import convolve2d
 warnings.filterwarnings('ignore')
 
@@ -955,6 +955,68 @@ def plot_detection_rate(stego_dict, covers):
 # ====================================================================
 #  MAIN
 # ====================================================================
+def _source_revision():
+    """The revision and cleanliness of the checkout that produced the run.
+
+    This is provenance, not identity. A run from a dirty tree is still a real
+    run and must not be reported as if it came from the recorded revision, so
+    the dirtiness is recorded rather than resolved.
+    """
+    here = os.path.dirname(os.path.abspath(__file__))
+    def git(*args):
+        try:
+            out = subprocess.run(['git', '-C', here, *args],
+                                 capture_output=True, text=True)
+        except OSError:
+            return None
+        return out.stdout.strip() if out.returncode == 0 else None
+
+    commit = git('rev-parse', 'HEAD')
+    status = git('status', '--porcelain')
+    dirty = bool(status) if status is not None else None
+    return commit, dirty
+
+
+def _dependency_versions():
+    """Installed distributions this run's numbers could depend on.
+
+    Read from installed metadata rather than imported modules, because scipy
+    and scikit-learn are imported lazily inside the functions that use them, and
+    their absence must be reported as absent rather than assumed.
+    """
+    versions = {}
+    for name in ('numpy', 'scipy', 'matplotlib', 'scikit-learn'):
+        try:
+            versions[name] = importlib.metadata.version(name)
+        except Exception:
+            versions[name] = 'absent'
+    return versions
+
+
+def execution_provenance(configuration):
+    """Provenance sufficient to distinguish this run from another.
+
+    Row 6c. The artifact already carried its numbers and its seed; what it
+    could not answer was which code and which environment produced them. That
+    gap is invisible while the checkout is unchanged and permanent afterwards,
+    because a deterministic run under a different revision or a different
+    scikit-learn is not the same run.
+    """
+    commit, dirty = _source_revision()
+    return {
+        'source_commit': commit,
+        'source_dirty': dirty,
+        'python_version': '{}.{}.{}'.format(*sys.version_info[:3]),
+        'python_implementation': platform.python_implementation(),
+        'dependency_versions': _dependency_versions(),
+        'platform': platform.system(),
+        'architecture': platform.machine(),
+        'seed': SEED,
+        'configuration': configuration,
+        'generator': 'sgn_simulator.py main()',
+    }
+
+
 def main():
     print("="*65)
     print("  Covert Pictorial Narrative and Multimedia Content")
@@ -1018,13 +1080,11 @@ def main():
     # hand-edited value is detected. See FALSIFIER-LOG-6b.md.
     artifact = {
         'schema': 'sgn-metrics/1',
-        'provenance': {
-            'seed': SEED,
+        'provenance': execution_provenance({
             'cover': 'natural_like, seed=42',
             'payload_bits': int(len(bits)),
             'image_shape': [IMG_SIZE, IMG_SIZE, N_CHANNELS],
-            'generator': 'sgn_simulator.py main()',
-        },
+        }),
         'methods': METHODS,
         'detection': detection,
         'summary': summary,

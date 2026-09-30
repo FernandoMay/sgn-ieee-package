@@ -131,16 +131,42 @@ def main():
         try:
             with open(METRICS) as handle:
                 metrics = json.load(handle)
-            expected = reconcile_readme.table_markdown(metrics)
-            tampered = original.replace("| 0.50 |", "| 0.99 |", 1)
-            if tampered == original:
-                tampered = original + "\n<!-- hand-edit -->\n"
-            detected = expected.strip() not in tampered
-            if detected:
-                print("  [PASS] F3 a hand-edited published value is detected")
+            expected = reconcile_readme.table_markdown(metrics).strip()
+
+            # Tamper generically. An earlier version of this test replaced the
+            # literal "| 0.50 |", which existed only because that was the
+            # published value at the time. The codec repair changed it to
+            # "| 1.00 |", so the literal was already down to two occurrences
+            # and would have disappeared entirely had the artifact produced
+            # 1.00 for every method — at which point the test would have failed
+            # for the wrong reason. A check must not depend on the value it is
+            # checking. This perturbs each data row in turn instead.
+            rows = [
+                line for line in original.splitlines()
+                if line.startswith("| ")
+                and "Method" not in line
+                and not re.match(r"^\|[\s:\-|]+\|$", line)
+            ]
+            if not rows:
+                print("  [FAIL] F3 rows found in the published table")
+                failures.append("F3-no-rows")
             else:
-                print("  [FAIL] F3 a hand-edited published value is detected")
-                failures.append("F3-hand-edit-undetected")
+                undetected = []
+                for row in rows:
+                    method = row.split("|")[1].strip()
+                    cells = row.split("|")
+                    cells[3] = " 99.9 "          # perturb the PSNR cell
+                    tampered = original.replace(row, "|".join(cells))
+                    if expected in tampered:
+                        undetected.append(method)
+
+                if undetected:
+                    print(f"  [FAIL] F3 hand-edit detected for all rows; missed: "
+                          f"{', '.join(undetected)}")
+                    failures.append("F3-hand-edit-undetected")
+                else:
+                    print(f"  [PASS] F3 a hand-edited value is detected "
+                          f"({len(rows)} rows perturbed)")
         finally:
             with open(README, "w") as handle:
                 handle.write(original)
