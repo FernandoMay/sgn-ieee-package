@@ -136,21 +136,31 @@ def main():
         if missing:
             failures.append(f"prohibition not stated: {tag}")
     # P7 negative test: the near-chance values must NOT be presented as errors
-    # P7 was originally: the near-chance values must never sit next to the word
-    # "error". The first version of this check flagged the adjudication's own C12 row,
-    # whose CLAIM CELL reads "is an error" and whose VERDICT cell reads NON-FINDING.
-    # The check could not see the negation two columns to the right. It now looks for
-    # an assertion that is not refuted nearby.
-    near = re.search(
-        r"(0\.45|0\.50)[^|]{0,120}(broken instrument|is wrong|is incorrect)[^|]{0,40}"
-        r"\|\s*(?!\*\*NON-FINDING)", both, re.I)
-    print(f"  [{'OK' if not near else 'PROBLEM':7s}] P7 near-chance values are never "
+    # P7, checked ROW BY ROW rather than by regex over whitespace-collapsed text.
+    # The regex version flagged the adjudication's own C12 row: its CLAIM cell reads
+    # "reflects a broken instrument" and its VERDICT cell reads NON-FINDING two
+    # columns to the right, which no bounded regex can see. Line-scoped inspection
+    # reads the whole row at once, which is what the reader does.
+    raw_adj = open(ADJ, encoding="utf-8").read() if os.path.exists(ADJ) else ""
+    rows = [l for l in raw_adj.split("\n") if l.strip().startswith("|")]
+    violation, refuted = None, False
+    for row in rows:
+        has_rate = ("0.45" in row) or ("0.50" in row)
+        asserts_bad = any(t in row for t in
+                          ("broken instrument", "is wrong", "is incorrect",
+                           "is an error", "must be corrected"))
+        has_refutation = "NON-FINDING" in row or "NON-FINDING" in row.replace("**", "")
+        if has_rate and asserts_bad:
+            if has_refutation:
+                refuted = True          # asserted and refuted in the same row
+            else:
+                violation = row.strip()
+                break
+    print(f"  [{'OK' if not violation else 'PROBLEM':7s}] P7 near-chance values are never "
           f"asserted to be wrong")
-    if near:
-        print(f"             - violation: {near.group(0)!r}")
+    if violation:
+        print(f"             - unrefuted violation: {violation!r}")
         failures.append("P7 near-chance values asserted to be wrong")
-    # and the refutation must actually be there
-    refuted = re.search(r"C12[^|]*\|[^|]*\|[^|]*\*\*NON-FINDING", both)
     print(f"  [{'OK' if refuted else 'PROBLEM':7s}] P7b the near-chance claim carries an "
           f"explicit NON-FINDING verdict")
     if not refuted:
@@ -159,10 +169,22 @@ def main():
     stage("CLEAN TREE")
     st = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT,
                         capture_output=True, text=True).stdout
-    residue = [l for l in st.split("\n") if l.strip()]
+    # The gate's own log is written by this run and is not a change to the audited
+    # object. Excluding it is stated, not silent, so the exclusion is auditable.
+    own = {"GATE-LOG-6d.md"}
+    residue = [l for l in st.split("\n")
+               if l.strip() and l.split(maxsplit=1)[-1] not in own]
+    if any(l.split(maxsplit=1)[-1] in own for l in st.split("\n") if l.strip()):
+        print(f"             (ignored the gate's own output: {sorted(own)})")
     print(f"  [{'OK' if not residue else 'PROBLEM':7s}] clean: {not residue}")
     for l in residue:
         print(f"             {l}")
+    # This stage previously PRINTED a problem without appending to `failures`, so the
+    # gate could report GATE PASSED while its own tree stage showed PROBLEM. A stage
+    # that cannot fail the gate is decoration, and a green gate whose last line is red
+    # teaches a reader to trust the wrong line.
+    if residue:
+        failures.append(f"working tree not clean: {len(residue)} path(s)")
 
     print("\n" + "=" * 78)
     if failures:
