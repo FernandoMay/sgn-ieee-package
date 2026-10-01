@@ -298,6 +298,12 @@ def main():
     print("=" * 78)
     if failures:
         print("FAILED: " + ", ".join(failures))
+        # Explicit per-failure markers so the release gate can verify that this
+        # falsifier is RED for a reason. QCE's falsifiers emit [FAIL]; this one
+        # originally only printed a summary line, and the gate could not tell a
+        # genuine RED from a crash that happened to exit 1.
+        for f in failures:
+            print(f"  [FAIL] {f}")
         return 1
     print("PASSED: the reported detection rate is attributable")
     return 0
