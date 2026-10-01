@@ -5,9 +5,9 @@ SGN 6d release gate
 ==============================================================================
 
   --- DESTINATION ---
+38ba3ca test(sgn): gate — P7 row-scoped, and CLEAN TREE can now fail the gate
 233de19 test(sgn): 6d adjudication, gate, and RED markers
 aadeabd test(sgn): 6d falsifier — ground truth, emission, and two undocumented arms
-8405dd5 fix(6c): record execution provenance in the generated artifact
 
   --- FALSIFIER + GROUND TRUTH + EMISSION ---
   [OK     ] test_detection_groundtruth.py  exit=1 FAIL=4 PASS=1
@@ -40,8 +40,7 @@ aadeabd test(sgn): 6d falsifier — ground truth, emission, and two undocumented
 
   --- CLEAN TREE ---
              (ignored the gate's own output: ['GATE-LOG-6d.md'])
-  [PROBLEM] clean: False
-              M tests/release_gate.py
+  [OK     ] clean: True
 
 ==============================================================================
 GATE PASSED
